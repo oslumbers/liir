@@ -1,4 +1,6 @@
-class MultiAgentEnv(object):
+from gym import Env
+
+class MultiAgentEnv(Env):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
