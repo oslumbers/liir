@@ -25,16 +25,16 @@ class LIIRCritic(nn.Module):
     def forward(self, batch, t=None):
         inputs = self._build_inputs(batch, t=t) #(bs, eplen, nagts, fea_len)
         x_1 = F.relu(self.fc1(inputs)) # (bs, eplen, nagts, 128)
-        x_1 = F.relu(self.fc2(x_1)) # (bs, eplen, nagts, 128)
-        v_mix = self.fc3_v_mix(x_1) # (bs, eplen, nagts)
+        x_2 = F.relu(self.fc2(x_1)) # (bs, eplen, nagts, 128)
+        v_mix = self.fc3_v_mix(x_2) # (bs, eplen, nagts)
         
         max_t = batch.max_seq_length if t is None else 1
         
-        x1 = x_1.reshape(self.args.batch_size, max_t,-1) #(bs, eplen, nagts*128)
+        x1 = x_2.reshape(self.args.batch_size, max_t,-1) #(bs, eplen, nagts*128)
         v_ex =  self.fc4(x1)  # (bs, eplen, 1)
-        x = ( self.fc3_r_in(x_1) ) # (bs, eplen, nagts, nactions)
+        x = ( self.fc3_r_in(x_2) ) # (bs, eplen, nagts, nactions)
         x1= x/10.
-        x2 = F.tanh(x1)
+        x2 = th.tanh(x1)
         r_in = x2*10.
    
         return r_in, v_mix, v_ex

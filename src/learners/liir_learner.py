@@ -5,6 +5,8 @@ from utils.rl_utils import build_td_lambda_targets
 import torch as th
 from torch.optim import RMSprop
 
+th.autograd.set_detect_anomaly(True)
+
 vf_coef = 1.0
 class LIIRLearner:
     def __init__(self, mac, scheme, logger, args):

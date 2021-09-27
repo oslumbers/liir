@@ -7,7 +7,7 @@ mask_before_softmax: False
 runner: "parallel"
 
 buffer_size: 32
-batch_size_run: 32
+batch_size_run: 1
 batch_size: 32
 
 env_args:

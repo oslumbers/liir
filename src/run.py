@@ -33,7 +33,9 @@ def run(_run, _config, _log):
     _log.info("\n\n" + experiment_params + "\n")
 
     # configure tensorboard logger
-    unique_token = "{}_{}_{}".format(args.name,args.env_args['map_name'], datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    map_name = _config["env_args"]["key"]
+    unique_token = f"{_config['name']}_seed{_config['seed']}_{map_name}_{datetime.datetime.now()}"
+    #unique_token = "{}_{}_{}".format(args.name,args.env_args['map_name'], datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     args.unique_token = unique_token
     if args.use_tensorboard:
         tb_logs_direc = os.path.join(dirname(dirname(abspath(__file__))), "results", "tb_logs")
