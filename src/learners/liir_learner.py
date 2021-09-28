@@ -2,6 +2,7 @@ import copy
 from components.episode_buffer import EpisodeBatch
 from modules.critics.liir import LIIRCritic 
 from utils.rl_utils import build_td_lambda_targets
+import numpy as np
 import torch as th
 from torch.optim import RMSprop
 
@@ -67,7 +68,8 @@ class LIIRLearner:
         mask = mask.view(-1, 1)
 
         avail_actions1 = avail_actions.reshape(-1, self.n_agents, self.n_actions)  # [maskxx,:]
-        mask_alive = 1.0 - avail_actions1[:, :, 0]
+        #mask_alive = 1.0 - avail_actions1[:, :, 0]
+        mask_alive = avail_actions1[:, :, 0]
         mask_alive = mask_alive.float()
 
         q_vals, critic_train_stats, target_mix, target_ex, v_ex, r_in = self._train_critic(batch, rewards, terminated,                                                                                        actions, avail_actions,
@@ -83,7 +85,7 @@ class LIIRLearner:
         mac_out = th.stack(mac_out, dim=1)  # Concat over time
         # Mask out unavailable actions, renormalise (as in action selection)
         mac_out[avail_actions == 0] = 0
-        mac_out = mac_out / mac_out.sum(dim=-1, keepdim=True)
+        mac_out = mac_out / (mac_out.sum(dim=-1, keepdim=True) + 1e-8)
         mac_out[avail_actions == 0] = 0
 
         # Calculated baseline
@@ -123,7 +125,7 @@ class LIIRLearner:
 
         # Mask out unavailable actions, renormalise (as in action selection)
         mac_out_old[avail_actions == 0] = 0
-        mac_out_old = mac_out_old / mac_out.sum(dim=-1, keepdim=True)
+        mac_out_old = mac_out_old / (mac_out.sum(dim=-1, keepdim=True) + 1e-8)
         mac_out_old[avail_actions == 0] = 0
         pi_old = mac_out_old.view(-1, self.n_actions)
 
@@ -147,7 +149,7 @@ class LIIRLearner:
 
         # Mask out unavailable actions, renormalise (as in action selection)
         mac_out_new[avail_actions == 0] = 0
-        mac_out_new = mac_out_new / mac_out.sum(dim=-1, keepdim=True)
+        mac_out_new = mac_out_new / (mac_out.sum(dim=-1, keepdim=True) + 1e-8)
         mac_out_new[avail_actions == 0] = 0
 
         pi_new = mac_out_new.view(-1, self.n_actions)

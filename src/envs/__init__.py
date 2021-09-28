@@ -71,7 +71,7 @@ class _GymmaWrapper(MultiAgentEnv):
         if key == 'LBF':
             self._env = ForagingEnv(players=2,
                           max_player_level=2,
-                          field_size=(6, 6),
+                          field_size=(4, 4),
                           max_food=3,
                           sight=1,
                           max_episode_steps=time_limit,

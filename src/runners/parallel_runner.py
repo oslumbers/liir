@@ -32,7 +32,9 @@ class ParallelRunner:
         self.t_env = 0
 
         self.train_returns = []
+        self.train_avg_reward = []
         self.test_returns = []
+        self.test_avg_reward = []
         self.train_stats = {}
         self.test_stats = {}
 
@@ -85,6 +87,7 @@ class ParallelRunner:
 
         all_terminated = False
         episode_returns = [0 for _ in range(self.batch_size)]
+        episode_avg_rewards = [0 for _ in range(self.batch_size)]
         episode_lengths = [0 for _ in range(self.batch_size)]
         self.mac.init_hidden(batch_size=self.batch_size)
         terminated = [False for _ in range(self.batch_size)]
@@ -135,7 +138,6 @@ class ParallelRunner:
                     data = parent_conn.recv()
                     # Remaining data for this current timestep
                     post_transition_data["reward"].append((data["reward"],))
-
                     episode_returns[idx] += data["reward"]
                     episode_lengths[idx] += 1
                     if not test_mode:
@@ -153,6 +155,7 @@ class ParallelRunner:
                     pre_transition_data["state"].append(data["state"])
                     pre_transition_data["avail_actions"].append(data["avail_actions"])
                     pre_transition_data["obs"].append(data["obs"])
+                #episode_avg_rewards[idx] = episode_returns[idx] / episode_lengths[idx]
 
             # Add post_transiton data into the batch
             self.batch.update(post_transition_data, bs=envs_not_terminated, ts=self.t, mark_filled=False)
@@ -162,6 +165,8 @@ class ParallelRunner:
 
             # Add the pre-transition data
             self.batch.update(pre_transition_data, bs=envs_not_terminated, ts=self.t, mark_filled=True)
+
+        episode_avg_rewards = [episode_returns[i] / episode_lengths[i] for i in range(len(episode_returns))]
 
         if not test_mode:
             self.t_env += self.env_steps_this_run
@@ -177,6 +182,7 @@ class ParallelRunner:
 
         cur_stats = self.test_stats if test_mode else self.train_stats
         cur_returns = self.test_returns if test_mode else self.train_returns
+        cur_avg_rewards = self.test_avg_reward if test_mode else self.train_avg_reward
         log_prefix = "test_" if test_mode else ""
         infos = [cur_stats] + final_env_infos
         cur_stats.update({k: sum(d.get(k, 0) for d in infos) for k in set.union(*[set(d) for d in infos])})
@@ -184,21 +190,25 @@ class ParallelRunner:
         cur_stats["ep_length"] = sum(episode_lengths) + cur_stats.get("ep_length", 0)
 
         cur_returns.extend(episode_returns)
+        cur_avg_rewards.extend(episode_avg_rewards)
 
         n_test_runs = max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         if test_mode and (len(self.test_returns) == n_test_runs):
-            self._log(cur_returns, cur_stats, log_prefix,filename,episode)
+            self._log(cur_returns, cur_avg_rewards, cur_stats, log_prefix,filename,episode)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
-            self._log(cur_returns, cur_stats, log_prefix)
+            self._log(cur_returns, cur_avg_rewards, cur_stats, log_prefix)
             if hasattr(self.mac.action_selector, "epsilon"):
                 self.logger.log_stat("epsilon", self.mac.action_selector.epsilon, self.t_env)
             self.log_train_stats_t = self.t_env
 
         return self.batch
 
-    def _log(self, returns, stats, prefix,filename="test.txt",episode=0):
+    def _log(self, returns, rewards, stats, prefix,filename="test.txt",episode=0):
         self.logger.log_stat(prefix + "return_mean", np.mean(returns), self.t_env)
         self.logger.log_stat(prefix + "return_std", np.std(returns), self.t_env)
+        self.logger.log_stat(prefix + "epsiode_reward_mean", np.mean(rewards), self.t_env)
+        self.logger.log_stat(prefix + "episode_reward_std", np.std(rewards), self.t_env)
+        rewards.clear()
         returns.clear()
 
         for k, v in stats.items():
@@ -206,7 +216,6 @@ class ParallelRunner:
                 self.logger.log_stat(prefix + k + "_mean" , v/stats["n_episodes"], self.t_env)
 
         stats.clear()
-
 
 def env_worker(remote, env_fn):
     # Make environment
