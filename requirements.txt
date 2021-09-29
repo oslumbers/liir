@@ -25,12 +25,12 @@ portpicker==1.2.0
 probscale==0.2.3
 protobuf==3.6.1
 py==1.6.0
-pygame==1.9.4
+#pygame==1.9.4
 pyparsing==2.2.2
-pysc2==2.0.2
+#pysc2==2.0.2
 pytest==3.8.2
 python-dateutil==2.7.3
-s2clientprotocol==4.6.1.68195.0
+#s2clientprotocol==4.6.1.68195.0
 sacred==0.7.2
 scipy==1.1.0
 six==1.11.0
