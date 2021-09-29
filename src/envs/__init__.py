@@ -68,10 +68,19 @@ class FlattenObservation(ObservationWrapper):
 class _GymmaWrapper(MultiAgentEnv):
     def __init__(self, key, time_limit, **kwargs):
         self.episode_limit = time_limit
-        if key == 'LBF':
+        if key == 'LBF4x4':
             self._env = ForagingEnv(players=2,
                           max_player_level=2,
                           field_size=(4, 4),
+                          max_food=3,
+                          sight=1,
+                          max_episode_steps=time_limit,
+                          force_coop=True,
+                          normalize_reward=True,)
+        elif key == 'LBF6x6':
+            self._env = ForagingEnv(players=2,
+                          max_player_level=2,
+                          field_size=(6, 6),
                           max_food=3,
                           sight=1,
                           max_episode_steps=time_limit,

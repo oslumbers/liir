@@ -38,6 +38,12 @@ python3 src/main.py --config=liir_smac --env-config=sc2 --map=3m
 
 All results will be stored in the `Results` folder.
 
+To train `LIIR` on LBF:
+
+```shell
+python3 main.py --config=liir_smac --env-config=gymma with env_args.time_limit=100 env_args.key='LBF' 
+```
+
 
 
 ## Licence
